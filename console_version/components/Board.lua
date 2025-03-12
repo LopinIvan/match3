@@ -1,10 +1,8 @@
 local IBoard = require('console_version.interfaces.IBoard')
 
--- Класс Board представляет игровое поле и основную логику игры
 local Board = setmetatable({}, { __index = IBoard })
 Board.__index = Board
 
--- Константы
 local GRID_SIZE = 10
 local COLORS = {'A', 'B', 'C', 'D', 'E', 'F'}
 

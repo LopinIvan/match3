@@ -47,14 +47,12 @@ function AnimationManager:update(dt)
         end
     end
     
-    -- Удаляем завершенные анимации
     for i = #self._animations, 1, -1 do
         if self._animations[i].complete then
             table.remove(self._animations, i)
         end
     end
     
-    -- Уведомляем о завершенных анимациях
     for _, anim in ipairs(completed) do
         self:emit('animationCompleted', anim)
     end
@@ -71,7 +69,6 @@ function AnimationManager:clear()
     self:emit('animationsCleared')
 end
 
--- Специальные анимации
 function AnimationManager:createSwapAnimation(gem1, gem2)
     return self:createAnimation('SWAP', {
         gem1 = gem1,
