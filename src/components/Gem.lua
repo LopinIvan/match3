@@ -26,7 +26,7 @@ end
 function Gem:setPosition(x, y)
     self._x = x
     self._y = y
-    self:emit('positionChanged', x, y)  -- Оповещение об изменении позиции
+    self:emit('positionChanged', x, y)
 end
 
 function Gem:isSelected()
@@ -35,7 +35,7 @@ end
 
 function Gem:setSelected(selected)
     self._isSelected = selected
-    self:emit('selectionChanged', selected)  -- Оповещение об изменении выбора
+    self:emit('selectionChanged', selected)
 end
 
 function Gem:isMatched()
@@ -44,7 +44,7 @@ end
 
 function Gem:setMatched(matched)
     self._isMatched = matched
-    self:emit('matchStateChanged', matched)  -- Оповещение об изменении состояния совпадения
+    self:emit('matchStateChanged', matched)
 end
 
 function Gem:getScale()
@@ -53,7 +53,7 @@ end
 
 function Gem:setScale(scale)
     self._scale = scale
-    self:emit('scaleChanged', scale)  -- Оповещение об изменении масштаба
+    self:emit('scaleChanged', scale)
 end
 
 function Gem:getAlpha()
@@ -62,7 +62,7 @@ end
 
 function Gem:setAlpha(alpha)
     self._alpha = alpha
-    self:emit('alphaChanged', alpha)  -- Оповещение об изменении прозрачности
+    self:emit('alphaChanged', alpha)
 end
 
 return Gem 
