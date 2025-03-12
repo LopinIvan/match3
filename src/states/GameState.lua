@@ -36,17 +36,17 @@ end
 
 function GameState:_loadResources()
     -- Загружаем изображения
-    IMAGES.background = love.graphics.newImage("assets/background.png")
-    IMAGES.cell = love.graphics.newImage("assets/cell.png")
-    IMAGES.selected = love.graphics.newImage("assets/selected.png")
+    IMAGES.background = love.graphics.newImage("src/assets/background.png")
+    IMAGES.cell = love.graphics.newImage("src/assets/cell.png")
+    IMAGES.selected = love.graphics.newImage("src/assets/selected.png")
     
     -- Загружаем изображения кристаллов
     for _, color in ipairs({'A', 'B', 'C', 'D', 'E', 'F'}) do
-        IMAGES.gems[color] = love.graphics.newImage("assets/gem_" .. color:lower() .. ".png")
+        IMAGES.gems[color] = love.graphics.newImage("src/assets/gem_" .. color:lower() .. ".png")
     end
     
     -- Загружаем звуки
-    SOUNDS.match = love.audio.newSource("assets/match.wav", "static")
+    SOUNDS.match = love.audio.newSource("src/assets/match.wav", "static")
 end
 
 function GameState:enter()
@@ -247,34 +247,30 @@ function GameState:_getGemColor(colorCode)
 end
 
 function GameState:handleInput(x, y, button)
-    if button == 1 and not self._animationManager:isAnimating() then
+    if button == 1 then  -- Левый клик
+        -- Преобразуем координаты экрана в координаты сетки
         local gridX = math.floor((x - self._gridOffsetX) / CELL_SIZE)
         local gridY = math.floor((y - self._gridOffsetY) / CELL_SIZE)
         
+        -- Проверяем, что клик был внутри сетки
         if gridX >= 0 and gridX < GRID_SIZE and gridY >= 0 and gridY < GRID_SIZE then
-            local gem = self._board:getGemAt(gridX, gridY)
-            if gem then
-                if self._selectedGem then
-                    -- Если кристалл уже выбран, пытаемся сделать ход
-                    local selectedX, selectedY = self._selectedGem:getPosition()
-                    if math.abs(gridX - selectedX) + math.abs(gridY - selectedY) == 1 then
-                        -- Кристаллы соседние, меняем их местами
-                        self._isUserMove = true  -- Устанавливаем флаг хода игрока
-                        self._board:swapGems(self._selectedGem, gem)
-                        self._selectedGem = nil
-                    else
-                        -- Кристаллы не соседние, выбираем новый
-                        self._selectedGem = gem
+            local clickedGem = self._board:getGemAt(gridX, gridY)
+            
+            if self._selectedGem then
+                -- Если уже есть выбранный кристалл
+                if clickedGem ~= self._selectedGem then
+                    -- Пытаемся поменять кристаллы местами
+                    if self._board:swapGems(self._selectedGem, clickedGem) then
+                        self._isUserMove = true
                     end
-                else
-                    -- Выбираем кристалл
-                    self._selectedGem = gem
+                    self._selectedGem = nil
                 end
-                return true
+            else
+                -- Выбираем кристалл
+                self._selectedGem = clickedGem
             end
         end
     end
-    return false
 end
 
 return GameState 

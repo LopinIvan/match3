@@ -8,13 +8,13 @@ local BUTTON_HEIGHT = 60
 
 function MenuState.new()
     local self = setmetatable({}, MenuState)
-    self._background = love.graphics.newImage("assets/background.png")
+    self._background = love.graphics.newImage("src/assets/background.png")
     return self
 end
 
 function MenuState:_loadAssets()
-    if love.filesystem.getInfo("assets/background.png") then
-        self._background = love.graphics.newImage("assets/background.png")
+    if love.filesystem.getInfo("src/assets/background.png") then
+        self._background = love.graphics.newImage("src/assets/background.png")
     end
 end
 

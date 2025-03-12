@@ -2,9 +2,6 @@ local StateManager = require('src.core.StateManager')
 local MenuState = require('src.states.MenuState')
 local GameState = require('src.states.GameState')
 
--- Глобальный менеджер состояний
-local stateManager = nil
-
 function love.load()
     -- Инициализация генератора случайных чисел
     math.randomseed(os.time())

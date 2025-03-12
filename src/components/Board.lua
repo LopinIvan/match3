@@ -43,13 +43,34 @@ function Board:swapGems(gem1, gem2)
     local x1, y1 = gem1:getPosition()
     local x2, y2 = gem2:getPosition()
     
+    -- Сохраняем текущее состояние
+    local tempGrid = {}
+    for x = 0, self._size - 1 do
+        tempGrid[x] = {}
+        for y = 0, self._size - 1 do
+            tempGrid[x][y] = self._grid[x][y]
+        end
+    end
+    
+    -- Пробуем сделать ход
     self._grid[x1][y1] = gem2
     self._grid[x2][y2] = gem1
     
+    -- Проверяем, есть ли совпадения
+    local matches = self:findMatches()
+    
+    -- Если совпадений нет, возвращаем предыдущее состояние
+    if #matches == 0 then
+        self._grid = tempGrid
+        return false
+    end
+    
+    -- Если есть совпадения, обновляем позиции кристаллов
     gem1:setPosition(x2, y2)
     gem2:setPosition(x1, y1)
     
     self:emit('gemsSwapped', gem1, gem2)
+    return true
 end
 
 function Board:findMatches()
