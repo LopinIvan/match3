@@ -1,65 +1,72 @@
+-- Импорт необходимых модулей и компонентов
 local IGameState = require('src.interfaces.IGameState')
 local Board = require('src.components.Board')
 local ScoreManager = require('src.components.ScoreManager')
 local AnimationManager = require('src.components.AnimationManager')
 
+-- Создание класса GameState, наследующего от IGameState
 local GameState = setmetatable({}, { __index = IGameState })
 GameState.__index = GameState
 
-local GRID_SIZE = 10
-local CELL_SIZE = 50
+-- Константы для настройки игрового поля
+local GRID_SIZE = 10  -- Размер сетки
+local CELL_SIZE = 50  -- Размер ячейки в пикселях
 
--- Добавляем ресурсы
+-- Хранилище игровых ресурсов
 local IMAGES = {
-    background = nil,
-    cell = nil,
-    selected = nil,
-    gems = {}
+    background = nil,  -- Фоновое изображение
+    cell = nil,       -- Изображение ячейки
+    selected = nil,   -- Изображение выделения
+    gems = {}         -- Изображения кристаллов
 }
 
+-- Хранилище звуковых эффектов
 local SOUNDS = {
-    match = nil
+    match = nil  -- Звук при совпадении
 }
 
+-- Конструктор игрового состояния
 function GameState.new()
     local self = setmetatable({}, GameState)
-    self._board = nil
-    self._scoreManager = nil
-    self._animationManager = nil
-    self._selectedGem = nil
-    self._gridOffsetX = 0
-    self._gridOffsetY = 0
-    self._isUserMove = false  -- Добавляем флаг для отслеживания хода игрока
-    self:_loadResources()
+    self._board = nil              -- Игровое поле
+    self._scoreManager = nil       -- Менеджер очков
+    self._animationManager = nil   -- Менеджер анимаций
+    self._selectedGem = nil        -- Выбранный кристалл
+    self._gridOffsetX = 0         -- Смещение сетки по X
+    self._gridOffsetY = 0         -- Смещение сетки по Y
+    self._isUserMove = false      -- Флаг хода игрока
+    self:_loadResources()         -- Загрузка ресурсов
     return self
 end
 
+-- Загрузка игровых ресурсов
 function GameState:_loadResources()
-    -- Загружаем изображения
+    -- Загрузка изображений
     IMAGES.background = love.graphics.newImage("src/assets/background.png")
     IMAGES.cell = love.graphics.newImage("src/assets/cell.png")
     IMAGES.selected = love.graphics.newImage("src/assets/selected.png")
     
-    -- Загружаем изображения кристаллов
+    -- Загрузка изображений кристаллов разных цветов
     for _, color in ipairs({'A', 'B', 'C', 'D', 'E', 'F'}) do
         IMAGES.gems[color] = love.graphics.newImage("src/assets/gem_" .. color:lower() .. ".png")
     end
     
-    -- Загружаем звуки
+    -- Загрузка звуковых эффектов
     SOUNDS.match = love.audio.newSource("src/assets/match.wav", "static")
 end
 
+-- Инициализация при входе в игровое состояние
 function GameState:enter()
-    -- Создаем компоненты
+    -- Создание основных компонентов
     self._board = Board.new(GRID_SIZE)
     self._scoreManager = ScoreManager.new()
     self._animationManager = AnimationManager.new()
     
-    -- Вычисляем отступы для центрирования
+    -- Вычисление отступов для центрирования игрового поля
     self._gridOffsetX = (love.graphics.getWidth() - GRID_SIZE * CELL_SIZE) / 2
     self._gridOffsetY = (love.graphics.getHeight() - GRID_SIZE * CELL_SIZE) / 2
     
-    -- Подписываемся на события
+    -- Подписка на события игрового поля
     self._board:on('gemsSwapped', function(gem1, gem2)
         self._animationManager:createSwapAnimation(gem1, gem2)
     end)
@@ -71,65 +78,70 @@ function GameState:enter()
     self._board:on('newGemsCreated', function(gems)
         for _, gem in ipairs(gems) do
             local x, y = gem:getPosition()
-            -- Устанавливаем начальную позицию выше сетки
+            -- Анимация падения новых кристаллов
             local startY = y - GRID_SIZE
             self._animationManager:createFallingAnimation(gem, startY, y)
         end
     end)
 end
 
+-- Очистка при выходе из игрового состояния
 function GameState:exit()
-    -- Очищаем все подписки на события
+    -- Освобождение ресурсов
     self._board = nil
     self._scoreManager = nil
     self._animationManager:clear()
     self._animationManager = nil
 end
 
+-- Обновление игровой логики
 function GameState:update(dt)
     if self._animationManager:isAnimating() then
+        -- Обновление анимаций
         self._animationManager:update(dt)
     else
-        -- Проверяем совпадения только когда нет активных анимаций
+        -- Проверка совпадений после завершения анимаций
         local matches = self._board:findMatches()
         if #matches > 0 then
-            -- Воспроизводим звук только если это ход игрока
+            -- Воспроизведение звука при совпадении (только для хода игрока)
             if SOUNDS.match and self._isUserMove then
                 SOUNDS.match:stop()
                 SOUNDS.match:play()
             end
             
-            -- Добавляем очки за совпадения
+            -- Начисление очков за совпадения
             for _, match in ipairs(matches) do
                 self._scoreManager:addMatchScore(#match)
             end
             
-            -- Удаляем совпавшие кристаллы
+            -- Удаление совпавших кристаллов
             self._board:removeMatches(matches)
             
-            -- Заполняем пустые места
+            -- Заполнение пустых мест
             self._board:fillEmptySpaces()
             
-            -- Сбрасываем флаг хода игрока после обработки совпадений
+            -- Сброс флага хода игрока
             self._isUserMove = false
         else
-            -- Если нет совпадений, проверяем возможные ходы
+            -- Проверка возможных ходов
             if not self._board:hasValidMoves() then
-                -- Если нет возможных ходов, перемешиваем поле
+                -- Перемешивание поля при отсутствии возможных ходов
                 self._board:mix()
             end
             
+            -- Сброс комбо и флага хода игрока
             self._scoreManager:resetCombo()
-            self._isUserMove = false  -- Сбрасываем флаг если нет совпадений
+            self._isUserMove = false
         end
     end
 end
 
+-- Отрисовка игрового состояния
 function GameState:draw()
-    -- Очищаем экран
+    -- Очистка экрана
     love.graphics.clear(0.15, 0.15, 0.2, 1)
     
-    -- Рисуем фон
+    -- Отрисовка фона
     if IMAGES.background then
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(IMAGES.background, 0, 0, 0,
@@ -137,8 +149,8 @@ function GameState:draw()
             love.graphics.getHeight() / IMAGES.background:getHeight())
     end
     
-    -- Рисуем сетку
-    love.graphics.setColor(0.3, 0.3, 0.35, 0.8)  -- Делаем сетку полупрозрачной
+    -- Отрисовка сетки
+    love.graphics.setColor(0.3, 0.3, 0.35, 0.8)
     for y = 0, GRID_SIZE - 1 do
         for x = 0, GRID_SIZE - 1 do
             love.graphics.rectangle("line",
@@ -148,19 +160,18 @@ function GameState:draw()
         end
     end
     
-    -- Рисуем кристаллы
+    -- Отрисовка кристаллов
     for y = 0, GRID_SIZE - 1 do
         for x = 0, GRID_SIZE - 1 do
             local gem = self._board:getGemAt(x, y)
             if gem then
-                -- Находим анимацию для кристалла
                 local anim = self:_findGemAnimation(gem)
                 self:_drawGem(gem, anim)
             end
         end
     end
     
-    -- Рисуем очки на полупрозрачном фоне
+    -- Отрисовка интерфейса очков
     love.graphics.setColor(0, 0, 0, 0.7)
     love.graphics.rectangle("fill", 5, 5, 200, 70)
     
@@ -168,13 +179,14 @@ function GameState:draw()
     love.graphics.print("Score: " .. self._scoreManager:getScore(), 10, 10)
     love.graphics.print("High Score: " .. self._scoreManager:getHighScore(), 10, 30)
     
-    -- Рисуем комбо
+    -- Отрисовка множителя комбо
     local combo = self._scoreManager:getCombo()
     if combo > 1 then
         love.graphics.print("Combo: x" .. combo, 10, 50)
     end
 end
 
+-- Поиск активной анимации для кристалла
 function GameState:_findGemAnimation(gem)
     for _, anim in ipairs(self._animationManager._animations) do
         if anim.params.gem == gem or anim.params.gem1 == gem or anim.params.gem2 == gem then
@@ -184,13 +196,16 @@ function GameState:_findGemAnimation(gem)
     return nil
 end
 
+-- Отрисовка отдельного кристалла с учетом анимации
 function GameState:_drawGem(gem, anim)
     local x, y = gem:getPosition()
     local screenX = self._gridOffsetX + x * CELL_SIZE
     local screenY = self._gridOffsetY + y * CELL_SIZE
     
+    -- Применение анимаций
     if anim then
         if anim.type == 'SWAP' then
+            -- Анимация обмена кристаллов
             if anim.params.gem1 == gem then
                 local progress = anim.progress
                 screenX = screenX + (anim.params.endPos1[1] - x) * progress * CELL_SIZE
@@ -201,8 +216,10 @@ function GameState:_drawGem(gem, anim)
                 screenY = screenY + (anim.params.endPos2[2] - y) * progress * CELL_SIZE
             end
         elseif anim.type == 'FADE' then
+            -- Анимация исчезновения
             love.graphics.setColor(1, 1, 1, 1 - anim.progress)
         elseif anim.type == 'SPAWN' then
+            -- Анимация появления
             love.graphics.setColor(1, 1, 1, anim.progress)
         elseif anim.type == 'FALL' then
             -- Анимация падения
@@ -212,20 +229,20 @@ function GameState:_drawGem(gem, anim)
         end
     end
     
-    -- Рисуем ячейку
+    -- Отрисовка ячейки
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.draw(IMAGES.cell, screenX, screenY, 0,
         CELL_SIZE / IMAGES.cell:getWidth(),
         CELL_SIZE / IMAGES.cell:getHeight())
     
-    -- Рисуем выделение если кристалл выбран
+    -- Отрисовка выделения выбранного кристалла
     if gem == self._selectedGem then
         love.graphics.draw(IMAGES.selected, screenX, screenY, 0,
             CELL_SIZE / IMAGES.selected:getWidth(),
             CELL_SIZE / IMAGES.selected:getHeight())
     end
     
-    -- Рисуем кристалл
+    -- Отрисовка кристалла
     love.graphics.setColor(1, 1, 1, 1)
     local gemImage = IMAGES.gems[gem:getColor()]
     if gemImage then
@@ -240,6 +257,7 @@ function GameState:_drawGem(gem, anim)
     end
 end
 
+-- Получение цвета кристалла по коду
 function GameState:_getGemColor(colorCode)
     local colors = {
         A = {0.9, 0.3, 0.3},  -- Красный
