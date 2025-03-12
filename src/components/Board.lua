@@ -182,4 +182,117 @@ function Board:fillEmptySpaces()
     return newGems
 end
 
+-- Проверка наличия возможных ходов
+function Board:hasValidMoves()
+    -- Проверяем все возможные ходы
+    for y = 0, self._size - 1 do
+        for x = 0, self._size - 1 do
+            -- Проверяем ход вправо
+            if x < self._size - 1 then
+                -- Временно меняем кристаллы
+                local gem1 = self:getGemAt(x, y)
+                local gem2 = self:getGemAt(x + 1, y)
+                if gem1 and gem2 then
+                    local x1, y1 = gem1:getPosition()
+                    local x2, y2 = gem2:getPosition()
+                    
+                    -- Меняем местами
+                    self._grid[x1][y1] = gem2
+                    self._grid[x2][y2] = gem1
+                    gem1:setPosition(x2, y2)
+                    gem2:setPosition(x1, y1)
+                    
+                    -- Проверяем на совпадения
+                    local hasMatch = #self:findMatches() > 0
+                    
+                    -- Возвращаем обратно
+                    self._grid[x1][y1] = gem1
+                    self._grid[x2][y2] = gem2
+                    gem1:setPosition(x1, y1)
+                    gem2:setPosition(x2, y2)
+                    
+                    if hasMatch then
+                        return true
+                    end
+                end
+            end
+            
+            -- Проверяем ход вниз
+            if y < self._size - 1 then
+                -- Временно меняем кристаллы
+                local gem1 = self:getGemAt(x, y)
+                local gem2 = self:getGemAt(x, y + 1)
+                if gem1 and gem2 then
+                    local x1, y1 = gem1:getPosition()
+                    local x2, y2 = gem2:getPosition()
+                    
+                    -- Меняем местами
+                    self._grid[x1][y1] = gem2
+                    self._grid[x2][y2] = gem1
+                    gem1:setPosition(x2, y2)
+                    gem2:setPosition(x1, y1)
+                    
+                    -- Проверяем на совпадения
+                    local hasMatch = #self:findMatches() > 0
+                    
+                    -- Возвращаем обратно
+                    self._grid[x1][y1] = gem1
+                    self._grid[x2][y2] = gem2
+                    gem1:setPosition(x1, y1)
+                    gem2:setPosition(x2, y2)
+                    
+                    if hasMatch then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    
+    return false
+end
+
+-- Перемешивание поля
+function Board:mix()
+    -- Собираем все кристаллы
+    local gems = {}
+    for y = 0, self._size - 1 do
+        for x = 0, self._size - 1 do
+            local gem = self:getGemAt(x, y)
+            if gem then
+                table.insert(gems, gem)
+            end
+        end
+    end
+    
+    -- Перемешиваем и расставляем, пока не получим валидное состояние
+    repeat
+        -- Перемешиваем
+        for i = #gems, 2, -1 do
+            local j = love.math.random(i)
+            gems[i], gems[j] = gems[j], gems[i]
+        end
+        
+        -- Расставляем
+        local index = 1
+        for y = 0, self._size - 1 do
+            for x = 0, self._size - 1 do
+                local gem = gems[index]
+                self._grid[x][y] = gem
+                gem:setPosition(x, y)
+                index = index + 1
+            end
+        end
+        
+        -- Проверяем условия:
+        -- 1. Нет готовых троек
+        -- 2. Есть хотя бы один возможный ход
+    until #self:findMatches() == 0 and self:hasValidMoves()
+    
+    -- Оповещаем об изменениях
+    self:emit('boardMixed')
+    
+    return true
+end
+
 return Board 

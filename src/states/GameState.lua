@@ -113,6 +113,12 @@ function GameState:update(dt)
             -- Сбрасываем флаг хода игрока после обработки совпадений
             self._isUserMove = false
         else
+            -- Если нет совпадений, проверяем возможные ходы
+            if not self._board:hasValidMoves() then
+                -- Если нет возможных ходов, перемешиваем поле
+                self._board:mix()
+            end
+            
             self._scoreManager:resetCombo()
             self._isUserMove = false  -- Сбрасываем флаг если нет совпадений
         end
