@@ -1,8 +1,6 @@
--- Класс ConsoleView отвечает за отображение игры в консоли
 local ConsoleView = {}
 ConsoleView.__index = ConsoleView
 
--- Константы
 local GRID_SIZE = 10
 
 function ConsoleView.new()
@@ -11,12 +9,10 @@ function ConsoleView.new()
     return self
 end
 
--- Установка модели для отображения
 function ConsoleView:setModel(board)
     self.board = board
 end
 
--- Обновление состояния представления
 function ConsoleView:update()
     if not self.board then
         return false
@@ -24,7 +20,6 @@ function ConsoleView:update()
     return true
 end
 
--- Отрисовка игрового поля
 function ConsoleView:render()
     if not self.board then
         return
@@ -33,10 +28,8 @@ function ConsoleView:render()
     self:clear()
     local grid = self.board:dump()
     
-    -- Выводим верхнюю границу
     print("  " .. string.rep("-", GRID_SIZE * 2 + 1))
     
-    -- Выводим поле
     for y = 0, GRID_SIZE - 1 do
         local row = string.format("%2d|", y)
         for x = 0, GRID_SIZE - 1 do
@@ -45,10 +38,8 @@ function ConsoleView:render()
         print(row)
     end
     
-    -- Выводим нижнюю границу
     print("  " .. string.rep("-", GRID_SIZE * 2 + 1))
     
-    -- Выводим координаты по X
     local xCoords = "   "
     for x = 0, GRID_SIZE - 1 do
         xCoords = xCoords .. string.format("%2d", x)
@@ -56,7 +47,6 @@ function ConsoleView:render()
     print(xCoords)
 end
 
--- Очистка экрана
 function ConsoleView:clear()
     if os.getenv("OS") == "Windows_NT" then
         os.execute("cls")
